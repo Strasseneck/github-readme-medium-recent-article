@@ -1,16 +1,41 @@
 import axios from 'axios';
 import moment from 'moment';
-
-
 import { JSDOM } from 'jsdom';
 
-export const getArticle = async (index: string, username: string) => {
-  const rssUrl = new String("https://api.rss2json.com/v1/api.json?rss_url=https://medium.com/feed/").concat(username);
-  const {
-    data: { items },
-  } = await axios.get(rssUrl);
+interface Article {
+  title: string;
+  pubDate: string;
+  link: string;
+  guid: string;
+  author: string;
+  thumbnail: ImageData | "";
+  description: string;
+  content: string;
+  enclosure: any;
+  categories: string[];
+}
 
-  let fixItem: any[] = []
+export const getArticle = async (index: string, username: string, guid?: string) => {
+  const rssUrl = new String("https://api.rss2json.com/v1/api.json?rss_url=https://medium.com/feed/").concat(username);
+  const res = await axios.get(rssUrl)
+  const { items }: { items: Article[] } = res.data;
+
+  let fixItem: Article[] = []
+
+  // if article id present extract that article
+  if (guid) {
+    items.map((item) => {
+      const parts = item.guid.split('/');
+      const itemGuid = parts[parts.length - 1];
+      if (itemGuid === guid) {
+        const thumbnail = extractFirstImageFromHTML(item.description)
+        if (thumbnail) {
+          item.thumbnail = thumbnail
+          fixItem.push(item)
+        }
+      }
+    })
+  }
 
   // @ts-ignore
   items.forEach(element => {
@@ -47,8 +72,6 @@ export const getArticle = async (index: string, username: string) => {
         .substring(0, 60) + '...',
   };
 };
-
-
 
 
 // Define a type for the image data
