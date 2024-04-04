@@ -35,26 +35,24 @@ export const getArticle = async (index: string, username: string, guid?: string)
         }
       }
     })
+  } else {
+    // @ts-ignore
+    items.forEach(element => {
+      const thumbnail = extractFirstImageFromHTML(element.description)
+      if (thumbnail) {
+        element.thumbnail = thumbnail
+        fixItem.push(element)
+      }
+    });
   }
-
-  // @ts-ignore
-  items.forEach(element => {
-    const thumbnail = extractFirstImageFromHTML(element.description)
-    if (thumbnail) {
-      element.thumbnail = thumbnail
-      fixItem.push(element)
-    }
-  });
 
   const { title, pubDate, link: url, thumbnail, description } = fixItem[
     // @ts-ignore
     index || 0
   ];
 
-
   const responseThumbnail = await axios(thumbnail.src, { responseType: 'arraybuffer' });
   const base64Img = Buffer.from(responseThumbnail.data, 'binary').toString('base64');
-
 
   const imgTypeArr = thumbnail.src.split('.');
   const imgType = imgTypeArr[imgTypeArr.length - 1];
